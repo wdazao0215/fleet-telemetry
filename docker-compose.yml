@@ -160,5 +160,24 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  simulator:
+    build:
+      <<: *dotnet-build
+      args:
+        PROJECT_PATH: src/Tools/FleetTelemetry.Simulator
+        ASSEMBLY_NAME: FleetTelemetry.Simulator
+    environment:
+      Simulator__IngestionUrl: http://ingestion-api:8080/api/v1/telemetry
+      Simulator__ApiKey: ${INGESTION_API_KEY:-dev-fleet-key}
+      Simulator__VehicleCount: ${SIMULATOR_VEHICLE_COUNT:-6}
+      Simulator__MinIntervalMilliseconds: ${SIMULATOR_MIN_INTERVAL_MS:-2000}
+      Simulator__MaxIntervalMilliseconds: ${SIMULATOR_MAX_INTERVAL_MS:-5000}
+      Simulator__DuplicateRate: ${SIMULATOR_DUPLICATE_RATE:-0.10}
+      Simulator__MalformedRate: ${SIMULATOR_MALFORMED_RATE:-0.05}
+      Simulator__StationaryVehicleCount: ${SIMULATOR_STATIONARY_COUNT:-1}
+    depends_on:
+      ingestion-api:
+        condition: service_healthy
+
 volumes:
   timescale-data:
