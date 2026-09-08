@@ -12,4 +12,14 @@
   <ItemGroup>
     <ProjectReference Include="..\..\BuildingBlocks\FleetTelemetry.Infrastructure\FleetTelemetry.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Embebidos en el ensamblado: el contenedor de runtime no lleva el árbol de fuentes, y un
+         script suelto en disco que no se copie convierte el fallo en un misterio de despliegue. -->
+    <EmbeddedResource Include="Scripts\*.sql" />
+  </ItemGroup>
+
 </Project>

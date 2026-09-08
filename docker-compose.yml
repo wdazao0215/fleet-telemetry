@@ -56,6 +56,21 @@ services:
       timeout: 10s
       retries: 10
 
+  migrator:
+    build:
+      <<: *dotnet-build
+      args:
+        PROJECT_PATH: src/Services/FleetTelemetry.Migrator
+        ASSEMBLY_NAME: FleetTelemetry.Migrator
+    environment:
+      ConnectionStrings__FleetDb: Host=timescaledb;Port=5432;Database=${POSTGRES_DB:-fleet_telemetry};Username=${POSTGRES_USER:-fleet};Password=${POSTGRES_PASSWORD:-fleet_local_dev}
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    # Job de un solo uso: aplica el esquema y termina. El resto de servicios espera a que salga con
+    # código 0, de modo que nadie consulta una tabla que todavía no existe.
+    restart: "no"
+
   ingestion-api:
     build:
       <<: *dotnet-build
@@ -95,6 +110,8 @@ services:
     ports:
       - "8082:8080"
     depends_on:
+      migrator:
+        condition: service_completed_successfully
       timescaledb:
         condition: service_healthy
       redis:
@@ -112,7 +129,18 @@ services:
       args:
         PROJECT_PATH: src/Services/FleetTelemetry.Processing.Worker
         ASSEMBLY_NAME: FleetTelemetry.Processing.Worker
+    environment:
+      ConnectionStrings__FleetDb: Host=timescaledb;Port=5432;Database=${POSTGRES_DB:-fleet_telemetry};Username=${POSTGRES_USER:-fleet};Password=${POSTGRES_PASSWORD:-fleet_local_dev}
+      Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD:-fleet_local_dev}
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER:-fleet}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:-fleet_local_dev}
+      Telemetry__StoppedRadiusMeters: ${TELEMETRY_STOPPED_RADIUS_METERS:-10}
+      Telemetry__StoppedThresholdSeconds: ${TELEMETRY_STOPPED_THRESHOLD_SECONDS:-60}
+      Telemetry__AlertCooldownSeconds: ${TELEMETRY_ALERT_COOLDOWN_SECONDS:-300}
     depends_on:
+      migrator:
+        condition: service_completed_successfully
       timescaledb:
         condition: service_healthy
       redis:

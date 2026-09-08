@@ -2,6 +2,10 @@ using FleetTelemetry.Application.Abstractions.Messaging;
 using FleetTelemetry.Application.Abstractions.Ports;
 using FleetTelemetry.Application.Configuration;
 using FleetTelemetry.Application.Telemetry.IngestPosition;
+using FleetTelemetry.Application.Telemetry.ProcessPosition;
+using FleetTelemetry.Infrastructure.Persistence;
+using FleetTelemetry.Infrastructure.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
 using FleetTelemetry.Infrastructure.Caching;
 using FleetTelemetry.Infrastructure.Cqrs;
 using FleetTelemetry.Infrastructure.Messaging;
@@ -69,6 +73,32 @@ public static class DependencyInjection
         services.AddHostedService<RabbitMqTopologyInitializer>();
         services.AddHostedService<FallbackDrainService>();
 
+        return services;
+    }
+
+    /// <summary>Persistencia sobre PostgreSQL + TimescaleDB.</summary>
+    public static IServiceCollection AddFleetPersistence(this IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("FleetDb")
+            ?? throw new InvalidOperationException("Falta la cadena de conexión 'ConnectionStrings:FleetDb'.");
+
+        services.AddDbContext<FleetDbContext>(options => options
+            .UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure(
+                maxRetryCount: 3,
+                maxRetryDelay: TimeSpan.FromSeconds(5),
+                errorCodesToAdd: null)));
+
+        services.AddScoped<IPositionRepository, TimescalePositionRepository>();
+        services.AddScoped<IVehicleRepository, VehicleRepository>();
+        services.AddScoped<IAlertRepository, AlertRepository>();
+
+        return services;
+    }
+
+    /// <summary>Casos de uso del worker de procesamiento.</summary>
+    public static IServiceCollection AddProcessingUseCases(this IServiceCollection services)
+    {
+        services.AddScoped<ICommandHandler<ProcessPositionCommand, ProcessPositionResult>, ProcessPositionHandler>();
         return services;
     }
 
