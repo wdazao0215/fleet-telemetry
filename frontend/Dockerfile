@@ -27,7 +27,16 @@ RUN npm run build
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000
+# HOSTNAME=0.0.0.0 no es opcional. El servidor standalone de Next hace bind a process.env.HOSTNAME,
+# y Docker define esa variable con el id del contenedor, que resuelve a su IP privada. El resultado
+# es un servidor que escucha SOLO en 172.x.y.z: el mapeo de puertos sigue funcionando desde fuera,
+# pero cualquier conexión desde dentro del contenedor -- incluido el healthcheck de compose -- falla
+# con "connection refused", y el contenedor queda marcado unhealthy sin que la aplicación tenga nada
+# malo.
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
 
 RUN apk add --no-cache curl
 
