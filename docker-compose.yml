@@ -62,6 +62,16 @@ services:
       args:
         PROJECT_PATH: src/Services/FleetTelemetry.Ingestion.Api
         ASSEMBLY_NAME: FleetTelemetry.Ingestion.Api
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD:-fleet_local_dev}
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER:-fleet}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:-fleet_local_dev}
+      Ingestion__ApiKey: ${INGESTION_API_KEY:-dev-fleet-key}
+      Telemetry__DeduplicationWindowSeconds: ${TELEMETRY_DEDUPE_WINDOW_SECONDS:-10}
+      Telemetry__StoppedRadiusMeters: ${TELEMETRY_STOPPED_RADIUS_METERS:-10}
+      Telemetry__StoppedThresholdSeconds: ${TELEMETRY_STOPPED_THRESHOLD_SECONDS:-60}
     ports:
       - "8081:8080"
     depends_on:
