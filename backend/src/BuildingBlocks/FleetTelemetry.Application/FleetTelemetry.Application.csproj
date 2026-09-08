@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FleetTelemetry.Domain\FleetTelemetry.Domain.csproj" />
+    <ProjectReference Include="..\FleetTelemetry.Contracts\FleetTelemetry.Contracts.csproj" />
   </ItemGroup>
 
 </Project>
