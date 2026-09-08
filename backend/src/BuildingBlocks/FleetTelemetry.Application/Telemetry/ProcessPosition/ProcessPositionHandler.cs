@@ -7,6 +7,7 @@ using FleetTelemetry.Contracts.Events;
 using FleetTelemetry.Domain.Alerts;
 using FleetTelemetry.Domain.Common;
 using FleetTelemetry.Domain.Telemetry;
+using FleetTelemetry.Domain.Vehicles;
 
 namespace FleetTelemetry.Application.Telemetry.ProcessPosition;
 
@@ -86,7 +87,47 @@ public sealed class ProcessPositionHandler(
             options.LiveStateTtl,
             cancellationToken).ConfigureAwait(false);
 
+        await PublishStateUpdateAsync(reading, evaluation, alertRaised, command.CorrelationId, now, cancellationToken)
+            .ConfigureAwait(false);
+
         return Result.Success(new ProcessPositionResult(alertRaised, Skipped: false));
+    }
+
+    /// <summary>
+    /// Anuncia el estado resultante para que el dashboard lo reciba en vivo.
+    /// </summary>
+    /// <remarks>
+    /// Se publica el estado ya derivado y no la posición cruda: si el navegador tuviera que decidir
+    /// si el vehículo está detenido, la regla de negocio viviría en dos sitios y se desincronizaría
+    /// a la primera.
+    /// </remarks>
+    private async Task PublishStateUpdateAsync(
+        TelemetryReading reading,
+        MovementEvaluation evaluation,
+        bool alertRaised,
+        string correlationId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var status = alertRaised || evaluation.IsStopped
+            ? VehicleActivityStatus.Alerted
+            : evaluation.HasMoved
+                ? VehicleActivityStatus.Moving
+                : VehicleActivityStatus.Stopped;
+
+        await eventBus.PublishAsync(
+            new VehicleStateUpdatedEvent(
+                EventId: Guid.CreateVersion7(),
+                OccurredAt: now,
+                CorrelationId: correlationId,
+                VehicleId: reading.VehicleId.Value,
+                Latitude: reading.Position.Latitude,
+                Longitude: reading.Position.Longitude,
+                RecordedAt: reading.RecordedAt,
+                Status: status.ToString(),
+                StationarySince: evaluation.HasMoved ? null : evaluation.LastMovement.ObservedAt),
+            Topology.RoutingKeys.VehicleStateUpdated,
+            cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<bool> TryRaiseStoppedAlertAsync(
