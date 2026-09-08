@@ -1,4 +1,5 @@
 using FleetTelemetry.Application.Abstractions.Messaging;
+using FleetTelemetry.Application.Alerts.RaisePanic;
 using FleetTelemetry.Application.Telemetry.IngestPosition;
 using FleetTelemetry.Domain.Common;
 using FleetTelemetry.Ingestion.Api.Http;
@@ -38,7 +39,36 @@ internal static class TelemetryEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized);
 
+        group.MapPost("/panic", RaisePanicAsync)
+            .WithName("RaisePanic")
+            .WithSummary("Registra la pulsación del botón de pánico del conductor.")
+            .Produces<RaisePanicResult>(StatusCodes.Status202Accepted)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
         return builder;
+    }
+
+    private static async Task<IResult> RaisePanicAsync(
+        PanicRequest request,
+        ICommandDispatcher dispatcher,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (request.Latitude is not { } latitude || request.Longitude is not { } longitude)
+        {
+            return MissingFields.ToProblem();
+        }
+
+        var result = await dispatcher.SendAsync(
+            new RaisePanicCommand(
+                request.VehicleId,
+                latitude,
+                longitude,
+                request.PressedAt ?? DateTimeOffset.UtcNow,
+                CorrelationIdOf(httpContext)),
+            cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Results.Accepted(value: result.Value) : result.Error.ToProblem();
     }
 
     private static async Task<IResult> IngestAsync(

@@ -16,6 +16,7 @@ builder.Services
     .AddProcessingUseCases();
 
 builder.Services.AddHostedService<PositionProcessingConsumer>();
+builder.Services.AddHostedService<PanicProcessingConsumer>();
 
 var host = builder.Build();
 await host.RunAsync().ConfigureAwait(false);
