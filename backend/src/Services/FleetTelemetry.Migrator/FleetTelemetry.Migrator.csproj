@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <UserSecretsId>dotnet-FleetTelemetry.Migrator-9c94f76e-ff90-4ed7-8da0-34fb08d4134c</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\BuildingBlocks\FleetTelemetry.Infrastructure\FleetTelemetry.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,6 @@
+@FleetTelemetry.Query.Api_HostAddress = http://localhost:5152
+
+GET {{FleetTelemetry.Query.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

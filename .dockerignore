@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/.next/
+**/out/
+**/.terraform/
+.git/
+.github/
+docs/
+**/*.md
+**/.env
+**/TestResults/
