@@ -5,4 +5,19 @@
     <ProjectReference Include="..\FleetTelemetry.Contracts\FleetTelemetry.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="StackExchange.Redis" />
+    <PackageReference Include="RabbitMQ.Client" />
+    <PackageReference Include="Polly.Core" />
+    <PackageReference Include="Polly.Extensions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FleetTelemetry.Infrastructure.Tests" />
+    <!-- NSubstitute genera los dobles de prueba en este ensamblado; sin acceso no puede crear
+         proxies de interfaces internas. -->
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
 </Project>
