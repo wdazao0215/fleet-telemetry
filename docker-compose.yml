@@ -84,6 +84,7 @@ services:
       RabbitMq__Username: ${RABBITMQ_USER:-fleet}
       RabbitMq__Password: ${RABBITMQ_PASSWORD:-fleet_local_dev}
       Ingestion__ApiKey: ${INGESTION_API_KEY:-dev-fleet-key}
+      Cors__AllowedOrigins__0: ${DASHBOARD_ORIGIN:-http://localhost:3000}
       Telemetry__DeduplicationWindowSeconds: ${TELEMETRY_DEDUPE_WINDOW_SECONDS:-10}
       Telemetry__StoppedRadiusMeters: ${TELEMETRY_STOPPED_RADIUS_METERS:-10}
       Telemetry__StoppedThresholdSeconds: ${TELEMETRY_STOPPED_THRESHOLD_SECONDS:-60}
