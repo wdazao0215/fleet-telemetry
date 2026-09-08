@@ -60,10 +60,37 @@ jobs:
           path: artifacts/tests
           if-no-files-found: ignore
 
+  frontend:
+    name: Frontend (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+      - name: Compilar
+        run: npm run build
+
   docker:
     name: Imágenes Docker
     runs-on: ubuntu-latest
-    needs: backend
+    needs: [backend, frontend]
     strategy:
       fail-fast: false
       matrix:
@@ -71,6 +98,8 @@ jobs:
           - { path: src/Services/FleetTelemetry.Ingestion.Api,     assembly: FleetTelemetry.Ingestion.Api }
           - { path: src/Services/FleetTelemetry.Query.Api,         assembly: FleetTelemetry.Query.Api }
           - { path: src/Services/FleetTelemetry.Processing.Worker, assembly: FleetTelemetry.Processing.Worker }
+          - { path: src/Services/FleetTelemetry.Migrator,           assembly: FleetTelemetry.Migrator }
+          - { path: src/Tools/FleetTelemetry.Simulator,             assembly: FleetTelemetry.Simulator }
     steps:
       - uses: actions/checkout@v5
 
