@@ -179,5 +179,27 @@ services:
       ingestion-api:
         condition: service_healthy
 
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Las URL apuntan a localhost y no a los nombres de servicio de compose: este bundle se
+        # ejecuta en el navegador del operador, que no resuelve la red interna de Docker.
+        NEXT_PUBLIC_QUERY_API_URL: ${PUBLIC_QUERY_API_URL:-http://localhost:8082}
+        NEXT_PUBLIC_INGESTION_API_URL: ${PUBLIC_INGESTION_API_URL:-http://localhost:8081}
+        NEXT_PUBLIC_INGESTION_API_KEY: ${INGESTION_API_KEY:-dev-fleet-key}
+    ports:
+      - "3000:3000"
+    depends_on:
+      query-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
 volumes:
   timescale-data:

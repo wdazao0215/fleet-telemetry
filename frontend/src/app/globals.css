@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+/*
+ * El dashboard es oscuro por decisión, no por moda: se mira durante turnos largos en salas de
+ * control, y el mapa de teselas oscuro hace que los marcadores de colores destaquen mucho más que
+ * sobre un mapa claro.
+ */
+:root {
+  color-scheme: dark;
+}
+
+/*
+ * Oscurece las teselas claras de OpenStreetMap. El filtro se aplica solo al panel de teselas: los
+ * marcadores y la polilínea viven en otros paneles de Leaflet y conservan su color real, que es lo
+ * que permite que el estado del vehículo se lea de un vistazo.
+ */
+.leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85) saturate(0.15);
+}
+
+/* Leaflet inyecta su propio fondo claro en los popups y en el contenedor. */
+.leaflet-container {
+  background: #0f172a;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.leaflet-control-attribution {
+  background: rgba(15, 23, 42, 0.8) !important;
+  color: #94a3b8 !important;
+}
+
+.leaflet-control-attribution a {
+  color: #7dd3fc !important;
+}
