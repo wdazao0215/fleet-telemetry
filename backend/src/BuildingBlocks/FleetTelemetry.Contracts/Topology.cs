@@ -18,6 +18,7 @@ public static class Topology
         public const string AlertRaised = "alert.raised";
         public const string VehicleDeletionRequested = "vehicle.deletion.requested";
         public const string VehicleDeletionCompleted = "vehicle.deletion.completed";
+        public const string VehicleStateUpdated = "vehicle.state.updated";
     }
 
     public static class Queues
@@ -26,5 +27,16 @@ public static class Topology
         public const string VehicleDeletion = "fleet.vehicle-deletion";
         public const string AlertFanout = "fleet.alert-fanout";
         public const string DeadLetter = "fleet.dead-letter";
+
+        /// <summary>
+        /// Prefijo de las colas efímeras que usan los servidores de tiempo real.
+        /// </summary>
+        /// <remarks>
+        /// Cada instancia de Query.Api declara su propia cola exclusiva en lugar de compartir una
+        /// duradera. Con una cola compartida, RabbitMQ repartiría los mensajes entre réplicas y solo
+        /// los navegadores conectados a una de ellas verían cada actualización. El broadcast exige
+        /// que todas las instancias reciban todo.
+        /// </remarks>
+        public const string LiveUpdatesPrefix = "fleet.live-updates";
     }
 }

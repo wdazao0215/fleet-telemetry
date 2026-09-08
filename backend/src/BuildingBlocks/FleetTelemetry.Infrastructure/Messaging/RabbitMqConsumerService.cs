@@ -35,6 +35,21 @@ public abstract partial class RabbitMqConsumerService<TEvent>(
 
     protected abstract string QueueName { get; }
 
+    /// <summary>
+    /// Cuando es <c>true</c>, la instancia declara su propia cola efímera en lugar de compartir una
+    /// duradera.
+    /// </summary>
+    /// <remarks>
+    /// Es la diferencia entre repartir trabajo y difundir. Un worker que procesa posiciones quiere
+    /// que cada mensaje lo atienda una sola réplica; un servidor de WebSockets necesita que **todas**
+    /// las réplicas reciban todo, o los navegadores conectados a una instancia se perderían las
+    /// actualizaciones que consumió otra.
+    /// </remarks>
+    protected virtual bool UsesExclusiveQueue => false;
+
+    /// <summary>Routing key a la que se enlaza la cola efímera. Solo aplica si es exclusiva.</summary>
+    protected virtual string? BindingRoutingKey => null;
+
     protected abstract Task HandleAsync(TEvent message, CancellationToken cancellationToken);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -79,17 +94,44 @@ public abstract partial class RabbitMqConsumerService<TEvent>(
         await channel.BasicQosAsync(prefetchSize: 0, PrefetchCount, global: false, stoppingToken)
             .ConfigureAwait(false);
 
+        var queue = await PrepareQueueAsync(channel, stoppingToken).ConfigureAwait(false);
+
         var consumer = new AsyncEventingBasicConsumer(channel);
         consumer.ReceivedAsync += async (_, arguments) =>
             await OnReceivedAsync(channel, arguments, stoppingToken).ConfigureAwait(false);
 
-        await channel.BasicConsumeAsync(QueueName, autoAck: false, consumer, stoppingToken).ConfigureAwait(false);
+        await channel.BasicConsumeAsync(queue, autoAck: false, consumer, stoppingToken).ConfigureAwait(false);
 
-        ConsumerStarted(logger, QueueName);
+        ConsumerStarted(logger, queue);
 
         // El canal vive mientras no se cancele; sin esta espera el 'await using' lo cerraría de
         // inmediato y el consumidor moriría en silencio nada más registrarse.
         await Task.Delay(Timeout.InfiniteTimeSpan, stoppingToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Devuelve el nombre de la cola desde la que consumir.</summary>
+    private async Task<string> PrepareQueueAsync(IChannel channel, CancellationToken cancellationToken)
+    {
+        if (!UsesExclusiveQueue)
+        {
+            return QueueName;
+        }
+
+        // Nombre vacío: lo genera el servidor. exclusive + autoDelete hacen que la cola desaparezca
+        // al desconectarse la instancia, así que apagar una réplica no deja colas huérfanas
+        // acumulando mensajes para siempre.
+        var declared = await channel.QueueDeclareAsync(
+            queue: string.Empty, durable: false, exclusive: true, autoDelete: true,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        await channel.QueueBindAsync(
+            declared.QueueName,
+            Topology.TelemetryExchange,
+            BindingRoutingKey ?? throw new InvalidOperationException(
+                "Una cola exclusiva necesita BindingRoutingKey."),
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        return declared.QueueName;
     }
 
     private async Task OnReceivedAsync(
