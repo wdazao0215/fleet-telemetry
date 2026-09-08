@@ -28,3 +28,15 @@ dotnet_diagnostic.CA1848.severity = suggestion
 
 # CA1515: en un host de ASP.NET los tipos públicos son la superficie natural del servicio.
 dotnet_diagnostic.CA1515.severity = none
+
+# CA1716 protege la interoperabilidad con lenguajes donde 'Error' es palabra reservada (VB.NET).
+# Este dominio solo se consume desde C#, y 'Result'/'Error' es el vocabulario estándar del patrón:
+# renombrarlo a DomainError empeoraría la legibilidad para protegerse de un consumidor inexistente.
+dotnet_diagnostic.CA1716.severity = none
+
+# Los tests usan Metodo_Condicion_ResultadoEsperado: el guion bajo separa las tres partes y hace que
+# el nombre del test se lea como una frase en el informe de fallos. CA1707 protege la convención de
+# nombres de una API pública, cosa que un ensamblado de tests no es.
+[backend/tests/**/*.cs]
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1861.severity = none
