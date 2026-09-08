@@ -1,10 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { requestToken } from "../api/auth.client";
-import { isExpired, type Session } from "../domain/types";
-
-const STORAGE_KEY = "fleet.session";
+import type { Session } from "../domain/types";
+import { sessionStore } from "./sessionStore";
 
 interface SessionContextValue {
   session: Session | null;
@@ -15,48 +14,24 @@ interface SessionContextValue {
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
-/**
- * Sesión del operador.
- *
- * El token se guarda en sessionStorage, no en localStorage: así muere al cerrar la pestaña y no
- * queda un JWT válido durante horas en un ordenador compartido de una sala de control. Sigue siendo
- * vulnerable a XSS; la solución correcta es una cookie httpOnly emitida por el backend, y está
- * anotada en el README como trabajo pendiente para producción.
- */
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  // useSyncExternalStore lee sessionStorage sin efectos ni setState: el valor del servidor es null
+  // y React re-renderiza con el real al hidratar, sin desajuste de hidratación.
+  const session = useSyncExternalStore(
+    sessionStore.subscribe,
+    sessionStore.getSnapshot,
+    sessionStore.getServerSnapshot,
+  );
 
-  useEffect(() => {
-    // Solo en el cliente: sessionStorage no existe durante el render en servidor.
-    const stored = window.sessionStorage.getItem(STORAGE_KEY);
-
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as Session;
-        if (!isExpired(parsed)) {
-          setSession(parsed);
-        } else {
-          window.sessionStorage.removeItem(STORAGE_KEY);
-        }
-      } catch {
-        window.sessionStorage.removeItem(STORAGE_KEY);
-      }
-    }
-
-    setIsReady(true);
-  }, []);
+  // Durante el render en servidor no se sabe todavía si hay sesión; sin esta distinción, el
+  // formulario de login parpadearía un instante para un operador que ya había entrado.
+  const isReady = typeof window !== "undefined";
 
   const signIn = useCallback(async (username: string, password: string) => {
-    const issued = await requestToken(username, password);
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(issued));
-    setSession(issued);
+    sessionStore.save(await requestToken(username, password));
   }, []);
 
-  const signOut = useCallback(() => {
-    window.sessionStorage.removeItem(STORAGE_KEY);
-    setSession(null);
-  }, []);
+  const signOut = useCallback(() => sessionStore.clear(), []);
 
   const value = useMemo(
     () => ({ session, isReady, signIn, signOut }),

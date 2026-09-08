@@ -12,26 +12,38 @@ import { FleetMapPanel } from "@/features/fleet/ui/FleetMapPanel";
 import { TransportIndicator } from "@/features/fleet/ui/TransportIndicator";
 import { AlertPanel } from "@/features/alerts/ui/AlertPanel";
 
+/** Referencia estable: un array nuevo en cada render reharía el memo del mapa sin necesidad. */
+const EMPTY_TRACK: TrackPoint[] = [];
+
 export default function DashboardPage() {
   const { session, isReady, signOut } = useSession();
   const token = session?.accessToken ?? null;
   const { vehicles, alerts, transport, error } = useFleetLive(token);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [track, setTrack] = useState<TrackPoint[]>([]);
+
+  // El recorrido se guarda junto al vehículo al que pertenece. Guardar solo los puntos obligaría a
+  // limpiarlos con un setState síncrono al cambiar de selección, que dispara renders en cascada;
+  // así el track visible se deriva y el efecto solo escribe estado de forma asíncrona.
+  const [loadedTrack, setLoadedTrack] = useState<{ vehicleId: string; points: TrackPoint[] }>({
+    vehicleId: "",
+    points: [],
+  });
+
+  const track = loadedTrack.vehicleId === selectedId ? loadedTrack.points : EMPTY_TRACK;
 
   const ordered = useMemo(() => [...vehicles].sort(byOperationalPriority), [vehicles]);
 
   useEffect(() => {
     if (!token || !selectedId) {
-      setTrack([]);
       return;
     }
 
     const controller = new AbortController();
+    const vehicleId = selectedId;
 
-    fetchTrack(token, selectedId, controller.signal)
-      .then(setTrack)
+    fetchTrack(token, vehicleId, controller.signal)
+      .then((points) => setLoadedTrack({ vehicleId, points }))
       .catch(() => {
         // El recorrido es información complementaria: si falla, el mapa sigue mostrando posiciones
         // actuales en lugar de dejar la pantalla en un estado de error.

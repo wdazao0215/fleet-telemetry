@@ -102,7 +102,6 @@ export function useFleetLive(token: string | null): FleetLive {
     }
 
     const controller = new AbortController();
-    void refresh(controller.signal);
 
     const connection = new HubConnectionBuilder()
       .withUrl(`${config.queryApiUrl}/hubs/telemetry`, {
@@ -173,11 +172,14 @@ export function useFleetLive(token: string | null): FleetLive {
 
           stopPolling();
           setTransport("live");
-          void refresh();
+          // La carga inicial se hace aquí y no en el cuerpo del efecto: llamar a setState de forma
+          // síncrona al montar provoca renders en cascada, y React 19 lo señala como error.
+          void refresh(controller.signal);
         })
         .catch(() => {
           // No es un error digno de mostrar: es el escenario esperado tras un proxy que no admite
           // WebSockets o un backend que todavía está arrancando. Se sirve por polling mientras.
+          void refresh(controller.signal);
           startPolling();
           reconnectRef.current = setTimeout(connectWithRetry, RECONNECT_DELAY_MS);
         });
