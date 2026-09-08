@@ -19,6 +19,7 @@ public static class Topology
         public const string VehicleDeletionRequested = "vehicle.deletion.requested";
         public const string VehicleDeletionCompleted = "vehicle.deletion.completed";
         public const string VehicleStateUpdated = "vehicle.state.updated";
+        public const string PanicButtonPressed = "vehicle.panic";
     }
 
     public static class Queues
@@ -26,6 +27,7 @@ public static class Topology
         public const string PositionProcessing = "fleet.position-processing";
         public const string VehicleDeletion = "fleet.vehicle-deletion";
         public const string AlertFanout = "fleet.alert-fanout";
+        public const string PanicProcessing = "fleet.panic-processing";
         public const string DeadLetter = "fleet.dead-letter";
 
         /// <summary>

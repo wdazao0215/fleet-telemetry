@@ -1,6 +1,8 @@
 using FleetTelemetry.Application.Abstractions.Messaging;
 using FleetTelemetry.Application.Abstractions.Ports;
 using FleetTelemetry.Application.Configuration;
+using FleetTelemetry.Application.Alerts.ProcessPanic;
+using FleetTelemetry.Application.Alerts.RaisePanic;
 using FleetTelemetry.Application.Telemetry.IngestPosition;
 using FleetTelemetry.Application.Telemetry.ProcessPosition;
 using FleetTelemetry.Infrastructure.Persistence;
@@ -99,6 +101,7 @@ public static class DependencyInjection
     public static IServiceCollection AddProcessingUseCases(this IServiceCollection services)
     {
         services.AddScoped<ICommandHandler<ProcessPositionCommand, ProcessPositionResult>, ProcessPositionHandler>();
+        services.AddScoped<ICommandHandler<ProcessPanicCommand, ProcessPanicResult>, ProcessPanicHandler>();
         return services;
     }
 
@@ -112,6 +115,7 @@ public static class DependencyInjection
     public static IServiceCollection AddIngestionUseCases(this IServiceCollection services)
     {
         services.AddScoped<ICommandHandler<IngestPositionCommand, IngestPositionResult>, IngestPositionHandler>();
+        services.AddScoped<ICommandHandler<RaisePanicCommand, RaisePanicResult>, RaisePanicHandler>();
         return services;
     }
 }

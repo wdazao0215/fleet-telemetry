@@ -58,6 +58,10 @@ public sealed class RabbitMqTopologyInitializer(
                 channel, Topology.Queues.AlertFanout, Topology.RoutingKeys.AlertRaised,
                 deadLetterArguments, cancellationToken).ConfigureAwait(false);
 
+            await DeclareAndBindAsync(
+                channel, Topology.Queues.PanicProcessing, Topology.RoutingKeys.PanicButtonPressed,
+                deadLetterArguments, cancellationToken).ConfigureAwait(false);
+
             logger.TopologyDeclared();
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
