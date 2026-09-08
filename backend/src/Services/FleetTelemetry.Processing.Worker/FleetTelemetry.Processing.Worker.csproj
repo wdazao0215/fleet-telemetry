@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <UserSecretsId>dotnet-FleetTelemetry.Processing.Worker-b746d134-065c-42e2-998a-6f788b05295f</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\BuildingBlocks\FleetTelemetry.Application\FleetTelemetry.Application.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\FleetTelemetry.Infrastructure\FleetTelemetry.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\FleetTelemetry.Contracts\FleetTelemetry.Contracts.csproj" />
+  </ItemGroup>
+</Project>

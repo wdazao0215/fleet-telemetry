@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\FleetTelemetry.Domain\FleetTelemetry.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

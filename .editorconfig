@@ -20,3 +20,11 @@ csharp_style_namespace_declarations = file_scoped:error
 csharp_style_var_when_type_is_apparent = true:suggestion
 dotnet_style_readonly_field = true:warning
 dotnet_diagnostic.CA2007.severity = none
+
+# CA1848 exige delegados LoggerMessage en TODA llamada a ILogger. Es la recomendación correcta en la
+# ruta caliente (la ingesta la aplica con [LoggerMessage]), pero convertir en error cada log de
+# arranque o de diagnóstico añade ruido sin ganancia medible. Se degrada a sugerencia a conciencia.
+dotnet_diagnostic.CA1848.severity = suggestion
+
+# CA1515: en un host de ASP.NET los tipos públicos son la superficie natural del servicio.
+dotnet_diagnostic.CA1515.severity = none
