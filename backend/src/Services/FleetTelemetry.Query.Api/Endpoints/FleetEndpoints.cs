@@ -1,5 +1,6 @@
 using FleetTelemetry.Application.Abstractions.Messaging;
 using FleetTelemetry.Application.Alerts.GetRecentAlerts;
+using FleetTelemetry.Application.Fleet.DeleteVehicle;
 using FleetTelemetry.Application.Fleet.GetFleetSnapshot;
 using FleetTelemetry.Application.Fleet.GetVehicleTrack;
 using FleetTelemetry.Query.Api.Http;
@@ -69,6 +70,29 @@ internal static class FleetEndpoints
             })
             .WithName("GetRecentAlerts")
             .WithSummary("Alertas recientes de la flota.");
+
+        group.MapDelete("/vehicles/{vehicleId}", async (
+                string vehicleId,
+                ICommandDispatcher dispatcher,
+                HttpContext httpContext,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await dispatcher
+                    .SendAsync(
+                        new DeleteVehicleCommand(vehicleId, httpContext.TraceIdentifier),
+                        cancellationToken)
+                    .ConfigureAwait(false);
+
+                // 202 y no 204: el borrado se aceptó pero aún no ha terminado. Responder 204 daría a
+                // entender que el vehículo ya no existe en ningún sitio, y la consistencia aquí es
+                // eventual por diseño.
+                return result.IsSuccess ? Results.Accepted(value: result.Value) : result.Error.ToProblem();
+            })
+            .WithName("DeleteVehicle")
+            .WithSummary("Inicia la saga de eliminación de un vehículo.")
+            .Produces<DeleteVehicleResult>(StatusCodes.Status202Accepted)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
         return builder;
     }

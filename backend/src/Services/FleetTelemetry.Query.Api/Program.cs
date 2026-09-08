@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using FleetTelemetry.Application.Abstractions.Messaging;
 using FleetTelemetry.Application.Alerts.GetRecentAlerts;
+using FleetTelemetry.Application.Fleet.DeleteVehicle;
 using FleetTelemetry.Application.Fleet.GetFleetSnapshot;
 using FleetTelemetry.Application.Fleet.GetVehicleTrack;
 using FleetTelemetry.Infrastructure;
@@ -71,6 +72,7 @@ builder.Services
 builder.Services.AddScoped<IQueryHandler<GetFleetSnapshotQuery, IReadOnlyList<VehicleSnapshot>>, GetFleetSnapshotHandler>();
 builder.Services.AddScoped<IQueryHandler<GetVehicleTrackQuery, VehicleTrack>, GetVehicleTrackHandler>();
 builder.Services.AddScoped<IQueryHandler<GetRecentAlertsQuery, IReadOnlyList<AlertDto>>, GetRecentAlertsHandler>();
+builder.Services.AddScoped<ICommandHandler<DeleteVehicleCommand, DeleteVehicleResult>, DeleteVehicleHandler>();
 
 // Los enums viajan como texto ("Moving", "Stopped") y no como enteros: un 2 en el JSON obliga al
 // frontend a mantener su propia tabla de equivalencias, que se desincroniza en cuanto se añade un
