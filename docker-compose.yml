@@ -107,6 +107,16 @@ services:
       args:
         PROJECT_PATH: src/Services/FleetTelemetry.Query.Api
         ASSEMBLY_NAME: FleetTelemetry.Query.Api
+    environment:
+      ConnectionStrings__FleetDb: Host=timescaledb;Port=5432;Database=${POSTGRES_DB:-fleet_telemetry};Username=${POSTGRES_USER:-fleet};Password=${POSTGRES_PASSWORD:-fleet_local_dev}
+      Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD:-fleet_local_dev}
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER:-fleet}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:-fleet_local_dev}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-dev-only-signing-key-change-me-32b}
+      Jwt__OperatorPassword: ${DASHBOARD_PASSWORD:-fleet-dev}
+      Cors__AllowedOrigins__0: ${DASHBOARD_ORIGIN:-http://localhost:3000}
+      Telemetry__StoppedThresholdSeconds: ${TELEMETRY_STOPPED_THRESHOLD_SECONDS:-60}
     ports:
       - "8082:8080"
     depends_on:
@@ -115,6 +125,8 @@ services:
       timescaledb:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
