@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FleetTelemetry.Migrator", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FleetTelemetry.Query.Api", "src\Services\FleetTelemetry.Query.Api\FleetTelemetry.Query.Api.csproj", "{7D3D13DE-0596-45E0-B724-C28BE129AE43}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FleetTelemetry.Infrastructure.Tests", "tests\FleetTelemetry.Infrastructure.Tests\FleetTelemetry.Infrastructure.Tests.csproj", "{8F10B712-62A1-44F2-87BE-83369A13665F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -205,6 +207,18 @@ Global
 		{7D3D13DE-0596-45E0-B724-C28BE129AE43}.Release|x64.Build.0 = Release|Any CPU
 		{7D3D13DE-0596-45E0-B724-C28BE129AE43}.Release|x86.ActiveCfg = Release|Any CPU
 		{7D3D13DE-0596-45E0-B724-C28BE129AE43}.Release|x86.Build.0 = Release|Any CPU
+		{8F10B712-62A1-44F2-87BE-83369A13665F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F10B712-62A1-44F2-87BE-83369A13665F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F10B712-62A1-44F2-87BE-83369A13665F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8F10B712-62A1-44F2-87BE-83369A13665F}.Debug|x64.Build.0 = Debug|Any CPU
+		{8F10B712-62A1-44F2-87BE-83369A13665F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8F10B712-62A1-44F2-87BE-83369A13665F}.Debug|x86.Build.0 = Debug|Any CPU
+		{8F10B712-62A1-44F2-87BE-83369A13665F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F10B712-62A1-44F2-87BE-83369A13665F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F10B712-62A1-44F2-87BE-83369A13665F}.Release|x64.ActiveCfg = Release|Any CPU
+		{8F10B712-62A1-44F2-87BE-83369A13665F}.Release|x64.Build.0 = Release|Any CPU
+		{8F10B712-62A1-44F2-87BE-83369A13665F}.Release|x86.ActiveCfg = Release|Any CPU
+		{8F10B712-62A1-44F2-87BE-83369A13665F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -226,5 +240,6 @@ Global
 		{CB168632-1B76-4045-AD8F-DD5F20A026AF} = {984BB9B3-3FA3-BE33-9484-CAC21695A33C}
 		{ED4EBF66-499F-4A3F-B345-887495F89226} = {984BB9B3-3FA3-BE33-9484-CAC21695A33C}
 		{7D3D13DE-0596-45E0-B724-C28BE129AE43} = {984BB9B3-3FA3-BE33-9484-CAC21695A33C}
+		{8F10B712-62A1-44F2-87BE-83369A13665F} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
