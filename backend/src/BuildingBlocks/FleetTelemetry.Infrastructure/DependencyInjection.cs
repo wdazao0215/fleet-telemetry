@@ -2,6 +2,7 @@ using FleetTelemetry.Application.Abstractions.Messaging;
 using FleetTelemetry.Application.Abstractions.Ports;
 using FleetTelemetry.Application.Configuration;
 using FleetTelemetry.Application.Alerts.ProcessPanic;
+using FleetTelemetry.Application.Fleet.CompleteVehicleDeletion;
 using FleetTelemetry.Application.Alerts.RaisePanic;
 using FleetTelemetry.Application.Telemetry.IngestPosition;
 using FleetTelemetry.Application.Telemetry.ProcessPosition;
@@ -102,6 +103,9 @@ public static class DependencyInjection
     {
         services.AddScoped<ICommandHandler<ProcessPositionCommand, ProcessPositionResult>, ProcessPositionHandler>();
         services.AddScoped<ICommandHandler<ProcessPanicCommand, ProcessPanicResult>, ProcessPanicHandler>();
+        services.AddScoped<
+            ICommandHandler<CompleteVehicleDeletionCommand, CompleteVehicleDeletionResult>,
+            CompleteVehicleDeletionHandler>();
         return services;
     }
 

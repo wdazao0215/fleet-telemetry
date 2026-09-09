@@ -11,3 +11,4 @@ Un ADR aceptado no se reescribe: si la decisión cambia, se escribe uno nuevo qu
 | [0002](0002-cqrs-con-dispatcher-propio.md) | CQRS con dispatcher propio en lugar de MediatR | Aceptada |
 | [0003](0003-mensajeria-y-resiliencia.md) | RabbitMQ tras un puerto, con circuit breaker y buffer local | Aceptada |
 | [0004](0004-timescaledb-para-el-historico.md) | TimescaleDB para el histórico, con esquema en scripts SQL | Aceptada |
+| [0005](0005-saga-de-eliminacion-de-vehiculos.md) | Eliminación de vehículos como saga con estado observable | Aceptada |

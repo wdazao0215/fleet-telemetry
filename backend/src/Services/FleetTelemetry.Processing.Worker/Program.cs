@@ -17,6 +17,7 @@ builder.Services
 
 builder.Services.AddHostedService<PositionProcessingConsumer>();
 builder.Services.AddHostedService<PanicProcessingConsumer>();
+builder.Services.AddHostedService<VehicleDeletionConsumer>();
 
 var host = builder.Build();
 await host.RunAsync().ConfigureAwait(false);
