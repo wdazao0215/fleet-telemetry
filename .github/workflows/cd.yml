@@ -19,7 +19,11 @@ concurrency:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
-  ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+  # El fallback no es cosmético: sin ECR_REGISTRY definido, el tag queda "/fleet-web:sha" y buildx
+  # falla con "invalid reference format". Los pasos de AWS están guardados tras AWS_ENABLED, pero la
+  # construcción de la imagen ocurre igual —y debe ocurrir, porque es lo que verifica el pipeline sin
+  # una cuenta— así que necesita un nombre de registro válido aunque no se publique.
+  ECR_REGISTRY: ${{ vars.ECR_REGISTRY || 'local' }}
   IMAGE_TAG: ${{ github.sha }}
 
 permissions:
