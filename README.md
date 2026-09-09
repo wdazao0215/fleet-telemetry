@@ -30,6 +30,52 @@ peticiones duplicadas y un 5% malformadas**, tal como pide el enunciado. Uno de 
 queda quieto a propósito para que la alerta de "Vehículo Detenido" aparezca sin esperar a que algo se
 detenga por casualidad.
 
+
+### Desarrollo: backend y frontend fuera de Docker
+
+Para iterar sobre el código conviene dejar en contenedores solo la infraestructura y ejecutar los
+servicios a mano, con recarga y depurador.
+
+**1. Levantar solo la infraestructura** (publica sus puertos en `localhost`):
+
+```bash
+docker compose up -d timescaledb redis rabbitmq
+```
+
+**2. Aplicar el esquema** (una vez, o tras añadir un script SQL):
+
+```bash
+dotnet run --project backend/src/Services/FleetTelemetry.Migrator
+```
+
+**3. Los tres servicios, cada uno en su terminal:**
+
+```bash
+dotnet run --project backend/src/Services/FleetTelemetry.Ingestion.Api      # http://localhost:8081
+dotnet run --project backend/src/Services/FleetTelemetry.Query.Api          # http://localhost:8082
+dotnet run --project backend/src/Services/FleetTelemetry.Processing.Worker
+```
+
+**4. El frontend:**
+
+```bash
+cd frontend && npm install && npm run dev                                   # http://localhost:3000
+```
+
+**5. Opcional, el generador de tráfico:**
+
+```bash
+dotnet run --project backend/src/Tools/FleetTelemetry.Simulator
+```
+
+Los `appsettings.Development.json` ya apuntan a las credenciales que levanta el compose y los
+perfiles de arranque fijan **los mismos puertos 8081 y 8082** que publica Docker. Así el frontend, el
+simulador y esta documentación funcionan igual en los dos modos, sin definir una sola variable de
+entorno ni confiar certificados de desarrollo.
+
+Para volver al modo completo, `docker compose up --build` levanta también los servicios de
+aplicación; conviene parar antes los `dotnet run` para no disputarse los puertos.
+
 ---
 
 ## Arquitectura
