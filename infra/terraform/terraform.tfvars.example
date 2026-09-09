@@ -1,0 +1,17 @@
+# Copiar a terraform.tfvars y ajustar. El archivo real está ignorado por git: los tfvars acaban
+# conteniendo identificadores de cuenta y nombres de dominio internos.
+
+aws_region  = "us-east-1"
+environment = "staging"
+
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+# Certificado de ACM en la misma región que el balanceador.
+certificate_arn = "arn:aws:acm:us-east-1:000000000000:certificate/00000000-0000-0000-0000-000000000000"
+
+dashboard_host = "fleet.example.com"
+ingestion_host = "ingest.fleet.example.com"
+query_host     = "api.fleet.example.com"
+
+# El pipeline sobrescribe esto con el SHA del commit.
+image_tag = "latest"

@@ -87,6 +87,29 @@ jobs:
       - name: Compilar
         run: npm run build
 
+  terraform:
+    name: Infraestructura (Terraform)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.13.1"
+
+      - name: Comprobar formato
+        run: terraform fmt -check -recursive
+
+      # -backend=false: valida sin necesitar credenciales ni el bucket de estado remoto.
+      - name: Inicializar
+        run: terraform init -backend=false
+
+      - name: Validar
+        run: terraform validate -no-color
+
   docker:
     name: Imágenes Docker
     runs-on: ubuntu-latest
