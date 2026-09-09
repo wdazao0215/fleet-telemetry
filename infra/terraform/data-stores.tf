@@ -51,11 +51,11 @@ resource "aws_db_instance" "main" {
   maintenance_window = "sun:08:30-sun:09:30"
 
   # Protección contra borrado solo en producción: en staging estorba al reconstruir el entorno.
-  deletion_protection = var.environment == "production"
-  skip_final_snapshot = var.environment != "production"
+  deletion_protection       = var.environment == "production"
+  skip_final_snapshot       = var.environment != "production"
   final_snapshot_identifier = var.environment == "production" ? "${local.name}-final" : null
 
-  performance_insights_enabled = true
+  performance_insights_enabled    = true
   enabled_cloudwatch_logs_exports = ["postgresql"]
 
   # Las versiones menores traen parches de seguridad; aplicarlas en la ventana de mantenimiento es

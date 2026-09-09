@@ -28,7 +28,7 @@ locals {
       "RabbitMq__Password",
       "Jwt__SigningKey",
       "Ingestion__ApiKey",
-    ] : {
+      ] : {
       name      = key
       valueFrom = "${aws_secretsmanager_secret.app.arn}:${key}::"
     }

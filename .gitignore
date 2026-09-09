@@ -25,7 +25,10 @@ coverage/
 crash.log
 *.tfvars
 !example.tfvars
-.terraform.lock.hcl
+
+# .terraform.lock.hcl SÍ se versiona: fija las versiones exactas de los proveedores y sus checksums.
+# Ignorarlo significa que dos personas pueden planificar con proveedores distintos y obtener
+# resultados distintos sobre la misma configuración.
 
 # ---- Entorno ----
 .env

@@ -45,7 +45,7 @@ resource "aws_secretsmanager_secret_version" "app" {
     RabbitMq__Username = "fleet"
     RabbitMq__Password = random_password.broker.result
 
-    Jwt__SigningKey      = random_password.jwt_signing_key.result
-    Ingestion__ApiKey    = random_password.ingestion_api_key.result
+    Jwt__SigningKey   = random_password.jwt_signing_key.result
+    Ingestion__ApiKey = random_password.ingestion_api_key.result
   })
 }
