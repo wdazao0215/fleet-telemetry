@@ -257,7 +257,7 @@ Nada de lo que se afirma aquí se dio por bueno sin ejecutarlo. Tras **4 horas d
 | **Rechazadas por la API** | **1.255** |
 | Posiciones persistidas | 23.987 |
 | Alertas generadas | 48 |
-| Tests | 102 (80 backend, 22 frontend) |
+| Tests | 114 (80 unitarios, 12 de integración, 22 de frontend) |
 
 El dato que importa: **rechazadas = malformadas, exactamente**. Se rechazó el 100% de los payloads
 inválidos y **ni una sola lectura válida**. La validación no tiene falsos positivos.
@@ -266,10 +266,21 @@ Para reproducir las comprobaciones una a una está la guía de la skill
 [`telemetry-verify`](.claude/skills/telemetry-verify/SKILL.md), que es el mismo guion que se siguió.
 
 ```bash
-dotnet test backend/FleetTelemetry.sln --filter "FullyQualifiedName!~Integration"
+dotnet test backend/FleetTelemetry.sln --filter "FullyQualifiedName!~Integration"   # unitarios
+dotnet test backend/tests/FleetTelemetry.Integration.Tests                          # Testcontainers
 cd frontend && npm run lint && npm test && npm run build
 cd infra/terraform && terraform init -backend=false && terraform validate
 ```
+
+Los de integración levantan **Redis y TimescaleDB reales** con Testcontainers, así que necesitan
+Docker en marcha. Cubren lo que ningún doble de prueba puede: que `SET NX` es atómico bajo
+concurrencia, que la ventana de deduplicación caduca por TTL de Redis y no por un temporizador del
+proceso, que `positions` es realmente una hypertable, y que `ON CONFLICT DO NOTHING` hace idempotente
+al consumidor.
+
+Y se comprobó que **detectan la regresión que dicen proteger**: quitando el timestamp de la clave de
+deduplicación —la implementación "natural" que desactivaría la alerta de vehículo detenido— falla
+exactamente 1 de los 12, el crítico, y los otros 11 siguen pasando.
 
 ---
 
@@ -456,10 +467,6 @@ producción sería un outbox en disco local o un volumen persistente.
 después de aceptar el borrado. Es visible en el dashboard, pero nadie lo resuelve solo: falta un
 proceso de barrido que reintente los que llevan demasiado tiempo en ese estado.
 
-**No hay tests de integración con Testcontainers.** El proyecto está creado y las dependencias
-declaradas, pero el tiempo se fue en verificar el sistema real de extremo a extremo, que consideré
-más valioso para esta entrega. Es la primera deuda que pagaría.
-
 **Autenticación de prototipo.** Una API key compartida para todos los dispositivos no permite revocar
 uno concreto; en producción sería una credencial por dispositivo con rotación. El JWT del dashboard
 se guarda en `sessionStorage` —muere al cerrar la pestaña, mejor que `localStorage` en un equipo
@@ -475,7 +482,8 @@ distribuido sería directo y es lo primero que montaría antes de un despliegue 
 
 ### Qué haría diferente con más tiempo
 
-1. **Tests de integración con Testcontainers** contra Timescale, Redis y RabbitMQ reales.
+1. **Extender los tests de integración a RabbitMQ**: hoy cubren Redis y TimescaleDB reales, falta
+   el ciclo completo publicar-consumir contra un broker de verdad.
 2. **OpenTelemetry** de punta a punta, aprovechando el `correlationId` existente.
 3. **Endpoint `POST /telemetry/batch`** para la sincronización offline: hoy la PWA gasta una petición
    por punto porque el endpoint del enunciado recibe uno solo.

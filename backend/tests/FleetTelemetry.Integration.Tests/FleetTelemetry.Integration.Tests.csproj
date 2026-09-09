@@ -6,6 +6,9 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Testcontainers.Redis" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
@@ -18,6 +21,14 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\BuildingBlocks\FleetTelemetry.Infrastructure\FleetTelemetry.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Services\FleetTelemetry.Ingestion.Api\FleetTelemetry.Ingestion.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- El esquema se aplica desde el mismo script que usa el migrador, enlazado en lugar de
+         copiado: duplicar el DDL garantizaría que un día el test valide una tabla que ya no existe. -->
+    <None Include="..\..\src\Services\FleetTelemetry.Migrator\Scripts\001_initial_schema.sql"
+          Link="Scripts\001_initial_schema.sql"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
