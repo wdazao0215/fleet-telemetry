@@ -52,6 +52,17 @@ jobs:
             --logger "trx;LogFileName=unit.trx" \
             --results-directory artifacts/tests
 
+      # Se ejecutan aparte y con más tiempo: levantan Redis y TimescaleDB reales con
+      # Testcontainers. Separarlos mantiene el diagnóstico limpio -- un fallo aquí es de integración
+      # o del runner, nunca de lógica de dominio.
+      - name: Tests de integración (Testcontainers)
+        run: |
+          dotnet test backend/tests/FleetTelemetry.Integration.Tests \
+            --configuration Release --no-build \
+            --logger "trx;LogFileName=integration.trx" \
+            --results-directory artifacts/tests
+        timeout-minutes: 15
+
       - name: Publicar resultados
         if: always()
         uses: actions/upload-artifact@v4

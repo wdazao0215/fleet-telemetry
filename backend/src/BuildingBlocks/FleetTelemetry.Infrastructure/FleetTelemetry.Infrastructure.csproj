@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="FleetTelemetry.Infrastructure.Tests" />
+    <InternalsVisibleTo Include="FleetTelemetry.Integration.Tests" />
     <!-- NSubstitute genera los dobles de prueba en este ensamblado; sin acceso no puede crear
          proxies de interfaces internas. -->
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
