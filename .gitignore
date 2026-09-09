@@ -38,3 +38,6 @@ crash.log
 Thumbs.db
 *.swp
 .idea/
+
+# tfvars reales: contienen identificadores de cuenta y hosts internos.
+infra/terraform/terraform.tfvars

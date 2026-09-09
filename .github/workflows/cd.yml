@@ -1,0 +1,178 @@
+name: CD
+
+# Despliegue a AWS. El pipeline está escrito entero y es ejecutable, pero los pasos que tocan una
+# cuenta real están guardados tras la variable AWS_ENABLED: sin ella el workflow corre, construye y
+# se detiene antes de publicar. Así el proceso queda demostrable y auditable sin adjuntar
+# credenciales a una prueba técnica ni arriesgar un despliegue accidental.
+#
+# Para activarlo de verdad: crear el rol de OIDC en AWS, definir los secretos AWS_ROLE_ARN y
+# AWS_REGION, y poner la variable de repositorio AWS_ENABLED a "true".
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+  ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+  IMAGE_TAG: ${{ github.sha }}
+
+permissions:
+  contents: read
+  # Necesario para asumir el rol por OIDC. Se prefiere a unas claves de acceso estáticas guardadas
+  # como secreto: las credenciales son temporales y no hay nada que rotar ni que se pueda filtrar.
+  id-token: write
+
+jobs:
+  build-and-push:
+    name: Construir y publicar imágenes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        service:
+          - { name: ingestion-api,     path: src/Services/FleetTelemetry.Ingestion.Api,     assembly: FleetTelemetry.Ingestion.Api }
+          - { name: query-api,         path: src/Services/FleetTelemetry.Query.Api,         assembly: FleetTelemetry.Query.Api }
+          - { name: processing-worker, path: src/Services/FleetTelemetry.Processing.Worker, assembly: FleetTelemetry.Processing.Worker }
+          - { name: migrator,          path: src/Services/FleetTelemetry.Migrator,          assembly: FleetTelemetry.Migrator }
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Autenticarse en AWS
+        if: vars.AWS_ENABLED == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Iniciar sesión en ECR
+        if: vars.AWS_ENABLED == 'true'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Construir y publicar ${{ matrix.service.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          build-args: |
+            PROJECT_PATH=${{ matrix.service.path }}
+            ASSEMBLY_NAME=${{ matrix.service.assembly }}
+          # linux/arm64 además de amd64: Fargate con Graviton cuesta bastante menos por vCPU y estos
+          # servicios no tienen ninguna dependencia nativa que lo impida.
+          platforms: linux/amd64,linux/arm64
+          push: ${{ vars.AWS_ENABLED == 'true' }}
+          tags: |
+            ${{ env.ECR_REGISTRY }}/fleet-${{ matrix.service.name }}:${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/fleet-${{ matrix.service.name }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-web:
+    name: Construir y publicar el dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Autenticarse en AWS
+        if: vars.AWS_ENABLED == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Iniciar sesión en ECR
+        if: vars.AWS_ENABLED == 'true'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Construir y publicar
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          # Las NEXT_PUBLIC_* se incrustan en el bundle durante el build, así que las URL públicas
+          # del entorno tienen que estar aquí y no en la definición de la tarea de ECS.
+          build-args: |
+            NEXT_PUBLIC_QUERY_API_URL=${{ vars.PUBLIC_QUERY_API_URL }}
+            NEXT_PUBLIC_INGESTION_API_URL=${{ vars.PUBLIC_INGESTION_API_URL }}
+          platforms: linux/amd64,linux/arm64
+          push: ${{ vars.AWS_ENABLED == 'true' }}
+          tags: |
+            ${{ env.ECR_REGISTRY }}/fleet-web:${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/fleet-web:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  migrate:
+    name: Aplicar migraciones
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: vars.AWS_ENABLED == 'true'
+    environment: production
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # El migrador corre como tarea puntual y debe terminar antes de que los servicios arranquen con
+      # código nuevo. Si falla, el despliegue se detiene aquí y las versiones antiguas siguen
+      # sirviendo tráfico contra el esquema que sí conocen.
+      - name: Ejecutar el migrador en Fargate
+        run: |
+          TASK_ARN=$(aws ecs run-task \
+            --cluster fleet-telemetry \
+            --task-definition fleet-migrator \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ vars.PRIVATE_SUBNETS }}],securityGroups=[${{ vars.APP_SECURITY_GROUP }}]}" \
+            --query 'tasks[0].taskArn' --output text)
+
+          aws ecs wait tasks-stopped --cluster fleet-telemetry --tasks "$TASK_ARN"
+
+          EXIT_CODE=$(aws ecs describe-tasks --cluster fleet-telemetry --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+
+          echo "El migrador terminó con código $EXIT_CODE"
+          test "$EXIT_CODE" = "0"
+
+  deploy:
+    name: Desplegar servicios
+    runs-on: ubuntu-latest
+    needs: [migrate, build-web]
+    if: vars.AWS_ENABLED == 'true'
+    environment: production
+    strategy:
+      # Sin fail-fast: si un servicio falla, los demás terminan su despliegue en lugar de dejar el
+      # sistema a medio actualizar.
+      fail-fast: false
+      matrix:
+        service: [ingestion-api, query-api, processing-worker, web]
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Forzar nuevo despliegue de ${{ matrix.service }}
+        run: |
+          aws ecs update-service \
+            --cluster fleet-telemetry \
+            --service "fleet-${{ matrix.service }}" \
+            --force-new-deployment
+
+      # ECS mantiene la versión anterior sirviendo hasta que la nueva pasa el health check del ALB.
+      # Si no estabiliza, este paso falla y el despliegue circuit-breaker de ECS revierte solo.
+      - name: Esperar a que el servicio estabilice
+        run: |
+          aws ecs wait services-stable \
+            --cluster fleet-telemetry \
+            --services "fleet-${{ matrix.service }}"
