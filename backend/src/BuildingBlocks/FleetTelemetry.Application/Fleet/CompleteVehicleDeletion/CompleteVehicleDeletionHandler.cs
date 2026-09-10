@@ -60,7 +60,13 @@ public sealed class CompleteVehicleDeletionHandler(
                 return Result.Failure<CompleteVehicleDeletionResult>(confirmation.Error);
             }
 
-            await vehicles.RemoveAsync(vehicle, cancellationToken).ConfigureAwait(false);
+            // La fila NO se borra: queda como lápida en estado Deleted. Borrarla físicamente hacía
+            // que el vehículo resucitara, porque su dispositivo sigue emitiendo y el alta automática
+            // lo volvía a crear como Active segundos después. Sin la fila no hay nada que recuerde
+            // que se dio de baja.
+            //
+            // El histórico y la caché sí se purgan de verdad: la lápida guarda un identificador y un
+            // estado, no datos de localización.
             await vehicles.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
             await PublishOutcomeAsync(command, succeeded: true, reason: null, cancellationToken)

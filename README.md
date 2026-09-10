@@ -206,7 +206,12 @@ Redis**. En lugar de fingir atomicidad, el borrado es una saga en dos pasos con 
    desaparece de la pantalla del operador de inmediato aunque borrar millones de filas tarde.
 
 Si un paso falla, **no se vuelve a `Active`**: el vehículo queda en `DeletionFailed` con el motivo,
-visible y reintentable. Un borrado a medias es un hecho que hay que ver, no que ocultar. → [ADR-0005](docs/adr/0005-saga-de-eliminacion-de-vehiculos.md)
+visible y reintentable. Un borrado a medias es un hecho que hay que ver, no que ocultar.
+
+Al completarse, la fila **no se borra**: queda como lápida en estado `Deleted`. El histórico y la
+caché sí se purgan de verdad; la lápida guarda un identificador y un estado, no datos de
+localización. Sin ella el vehículo resucitaba: su dispositivo sigue emitiendo y el alta automática
+lo recreaba como activo segundos después. → [ADR-0005](docs/adr/0005-saga-de-eliminacion-de-vehiculos.md)
 
 Verificado de extremo a extremo:
 
@@ -462,6 +467,11 @@ Estas son limitaciones reales, no futuras mejoras hipotéticas:
 **El buffer de respaldo vive en memoria.** Si el proceso muere mientras contiene mensajes, se
 pierden. Es la contrapartida consciente de no depender del disco ni de la base de datos. En
 producción sería un outbox en disco local o un volumen persistente.
+
+**Las lápidas de los vehículos borrados crecen sin límite.** Cada baja deja una fila permanente en
+`vehicles` para que el dispositivo no pueda resucitar al vehículo. Son filas diminutas —un
+identificador y un estado— pero nada las purga: haría falta un proceso que las retire pasado un
+tiempo prudencial, cuando ya sea seguro asumir que ese dispositivo dejó de emitir.
 
 **Un vehículo puede quedarse en `PendingDeletion` para siempre** si el worker está caído justo
 después de aceptar el borrado. Es visible en el dashboard, pero nadie lo resuelve solo: falta un
