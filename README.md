@@ -262,7 +262,7 @@ Nada de lo que se afirma aquí se dio por bueno sin ejecutarlo. Tras **4 horas d
 | **Rechazadas por la API** | **1.255** |
 | Posiciones persistidas | 23.987 |
 | Alertas generadas | 48 |
-| Tests | 114 (80 unitarios, 12 de integración, 22 de frontend) |
+| Tests | 117 (83 unitarios y de arquitectura, 12 de integración, 22 de frontend) |
 
 El dato que importa: **rechazadas = malformadas, exactamente**. Se rechazó el 100% de los payloads
 inválidos y **ni una sola lectura válida**. La validación no tiene falsos positivos.
