@@ -127,6 +127,37 @@ public class DeletionSagaTests
     }
 
     [Fact]
+    public async Task CompleteDeletion_LeavesATombstoneInsteadOfDeletingTheRow()
+    {
+        // El vehículo dado de baja debe seguir existiendo como lápida en estado Deleted. Borrar la
+        // fila lo hacía resucitar: su dispositivo sigue emitiendo, y el alta automática lo recreaba
+        // como Active segundos después. Sin fila no hay nada que recuerde la baja.
+        var vehicle = GivenRegisteredVehicle();
+        vehicle.RequestDeletion(Now);
+
+        await CompleteHandler().HandleAsync(
+            new CompleteVehicleDeletionCommand("VH-001", "c"), CancellationToken.None);
+
+        vehicle.State.ShouldBe(VehicleLifecycleState.Deleted);
+        vehicle.AcceptsTelemetry.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task DeleteVehicle_OnATombstonedVehicle_ReportsItAsNotFound()
+    {
+        // Para quien consulta la API, un vehículo dado de baja ya no existe: la lápida es un detalle
+        // interno, no algo que deba aparecer como si aún estuviera ahí.
+        var vehicle = GivenRegisteredVehicle();
+        vehicle.RequestDeletion(Now);
+        vehicle.ConfirmDeletion();
+
+        var result = await DeleteHandler().HandleAsync(
+            new DeleteVehicleCommand("VH-001", "c"), CancellationToken.None);
+
+        result.Error.ShouldBe(TelemetryErrors.VehicleNotFound);
+    }
+
+    [Fact]
     public async Task CompleteDeletion_OnAVehicleAlreadyGone_SucceedsWithoutFailing()
     {
         // La cola entrega at-least-once: reprocesar el mensaje no puede romper nada.

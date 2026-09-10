@@ -20,7 +20,5 @@ public interface IVehicleRepository
     /// </remarks>
     Task<Vehicle> EnsureRegisteredAsync(VehicleId vehicleId, DateTimeOffset now, CancellationToken cancellationToken);
 
-    Task RemoveAsync(Vehicle vehicle, CancellationToken cancellationToken);
-
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }

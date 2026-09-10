@@ -31,6 +31,10 @@ internal sealed class VehicleRepository(FleetDbContext context) : IVehicleReposi
         CancellationToken cancellationToken)
     {
         var existing = await GetAsync(vehicleId, cancellationToken).ConfigureAwait(false);
+
+        // Incluye las lápidas: un vehículo dado de baja se devuelve en estado Deleted, y como
+        // AcceptsTelemetry es false, el handler descarta su posición. Ignorar la lápida aquí sería
+        // resucitar el vehículo con la primera lectura que llegue de un dispositivo que nadie apagó.
         if (existing is not null)
         {
             return existing;
@@ -60,12 +64,6 @@ internal sealed class VehicleRepository(FleetDbContext context) : IVehicleReposi
 
             return winner;
         }
-    }
-
-    public Task RemoveAsync(Vehicle vehicle, CancellationToken cancellationToken)
-    {
-        context.Vehicles.Remove(vehicle);
-        return Task.CompletedTask;
     }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken) => context.SaveChangesAsync(cancellationToken);

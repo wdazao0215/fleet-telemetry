@@ -98,6 +98,19 @@ public class ProcessPositionHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_ForAVehicleGivenUpForDeletion_DropsThePosition()
+    {
+        // El dispositivo de un vehículo dado de baja puede seguir encendido durante días. Sus
+        // lecturas no deben resucitarlo ni volver a llenar el histórico que la saga acaba de purgar.
+        GivenATombstonedVehicle();
+
+        var result = await Handler().HandleAsync(CommandAt(4.6500, -74.1000), CancellationToken.None);
+
+        result.Value.Skipped.ShouldBeTrue();
+        await positions.DidNotReceiveWithAnyArgs().SaveAsync(default!, default);
+    }
+
+    [Fact]
     public async Task HandleAsync_PersistsBeforeUpdatingTheCache()
     {
         // El orden importa: si la caché se escribiera primero y la persistencia fallara, el
@@ -127,6 +140,17 @@ public class ProcessPositionHandlerTests
     {
         var vehicle = Vehicle.Register(VehicleId.Create("VH-PARKED").Value, "Camión", Now.AddDays(-1));
         vehicle.RequestDeletion(Now);
+
+        vehicles
+            .EnsureRegisteredAsync(Arg.Any<VehicleId>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(vehicle);
+    }
+
+    private void GivenATombstonedVehicle()
+    {
+        var vehicle = Vehicle.Register(VehicleId.Create("VH-PARKED").Value, "Camión", Now.AddDays(-1));
+        vehicle.RequestDeletion(Now);
+        vehicle.ConfirmDeletion();
 
         vehicles
             .EnsureRegisteredAsync(Arg.Any<VehicleId>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
