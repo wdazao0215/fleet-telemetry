@@ -1,6 +1,25 @@
 # Guion del video de sustentación
 
-Objetivo: 8 minutos (el máximo son 10). Subir a YouTube **como "No listado"** y enlazar en el README.
+## Lo que exige el enunciado
+
+> *"Graba un video corto (máximo 5 a 10 minutos) presentando tu solución. Explica la arquitectura
+> elegida, haz una breve demostración del funcionamiento del aplicativo (y el simulador), y justifica
+> tus decisiones técnicas principales. Sube el video a YouTube como 'No listado' (Privado/Oculto) y
+> comparte el enlace."*
+
+Cuatro obligaciones de contenido y tres de forma:
+
+| | Dónde se cubre |
+|---|---|
+| Explicar la arquitectura elegida | 0:00 y 6:30 |
+| Demostrar el aplicativo funcionando | 2:45 – 5:45 |
+| **Demostrar el simulador** | 2:00 |
+| Justificar las decisiones técnicas principales | transversal, sobre todo 0:45 y 2:45 |
+| Máximo 10 minutos | objetivo: 8 |
+| YouTube como **"No listado"** | al subirlo |
+| Enlace compartido | última sección del README |
+
+Objetivo: 8 minutos. Deja margen: si se alarga, recorta de 6:30 antes que de 0:45 o 2:45.
 
 ## Antes de grabar
 
@@ -35,7 +54,7 @@ Señalar en pantalla: vehículos moviéndose, estados cambiando, el indicador "E
 > context y eso está declarado explícitamente en el ADR-0001, porque partir el dominio daría el coste
 > de los microservicios sin su beneficio."
 
-## 0:45 — 2:15 · El hallazgo: deduplicación contra detección
+## 0:45 — 2:00 · El hallazgo: deduplicación contra detección
 
 **Este es el punto más fuerte de la entrega. Dedicarle tiempo.**
 
@@ -55,7 +74,38 @@ Dibujar o señalar el flujo:
 
 Mostrar `RedisKeys.Deduplication` y el comentario que lo explica.
 
-## 2:15 — 3:30 · Circuit Breaker en vivo
+## 2:00 — 2:45 · El simulador
+
+El enunciado pide demostrarlo expresamente, no solo mencionarlo.
+
+```bash
+docker compose logs simulator | grep Enviadas | tail -1
+```
+
+> "Seis vehículos emitiendo cada 2 a 5 segundos, cada uno en su propio bucle: un único bucle
+> recorriendo la flota produciría ráfagas sincronizadas, que no se parecen en nada a dispositivos
+> independientes."
+
+Señala los contadores en pantalla:
+
+> "Inyecta un 10% de peticiones duplicadas y un 5% con formato erróneo, como pide el enunciado. Y
+> fíjate en este número: **las rechazadas coinciden exactamente con las malformadas**. Se rechaza el
+> 100% de lo inválido y ni una sola lectura buena."
+
+```bash
+docker compose logs ingestion-api | grep -oE "responded [0-9]+" | sort | uniq -c | sort -rn
+```
+
+> "Visto desde la ingesta: la mayoría 202, una parte 200 que son los duplicados detectados, y una
+> minoría 400 de los payloads malformados. Los tres caminos conviven."
+
+Y el detalle que hace demostrable la alerta:
+
+> "Uno de los seis se queda quieto a propósito, porque si no habría que esperar a que algo se
+> detuviera por casualidad. Pero sigue derivando metro y medio, que es el ruido real de un GPS civil
+> en reposo: si repitiera una coordenada exacta, la detección sería trivial y no probaría nada."
+
+## 2:45 — 4:00 · Circuit Breaker en vivo
 
 La demostración con más impacto. Hacerla de verdad, no contarla.
 
@@ -84,7 +134,7 @@ docker compose start rabbitmq
 > datos: la base puede ser justamente lo que está caído, y un fallback que depende del componente que
 > falló no es un fallback. Esa contrapartida está escrita en el ADR."
 
-## 3:30 — 4:30 · Alerta de vehículo detenido y tiempo real
+## 4:00 — 4:45 · Alerta de vehículo detenido y tiempo real
 
 Señalar en el dashboard el vehículo en rojo y el panel de alertas.
 
@@ -98,7 +148,7 @@ Señalar en el dashboard el vehículo en rojo y el panel de alertas.
 
 Mencionar de pasada el cooldown: sin él, un camión aparcado genera cientos de alertas idénticas.
 
-## 4:30 — 5:30 · La PWA del conductor y el offline
+## 4:45 — 5:45 · La PWA del conductor y el offline
 
 Cambiar a la vista móvil.
 
@@ -118,7 +168,7 @@ Desactivar el interruptor.
 
 Pulsar el botón de pánico y **cambiar al dashboard** para mostrar que la alerta llegó.
 
-## 5:30 — 6:30 · Saga de eliminación
+## 5:45 — 6:30 · Saga de eliminación
 
 ```bash
 curl -X DELETE http://localhost:8082/api/v1/vehicles/VH-001 -H "Authorization: Bearer $TOKEN"
